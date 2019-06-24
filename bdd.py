@@ -13,6 +13,10 @@ class Scenario:
             self.scenario.add_event(event, args, kwargs)
             return Scenario.Event(self.scenario)
 
+        def Build(self):
+            return self.scenario
+
+
     class Event:
 
         def __init__(self, scenario):
@@ -24,6 +28,9 @@ class Scenario:
 
         def Then(self, clause, *args, **kwargs):
             return Scenario.OpenClause(self.scenario, clause, args, kwargs)
+
+        def Build(self):
+            return self.scenario
 
     class OpenClause:
 
@@ -52,6 +59,8 @@ class Scenario:
         def Run(self):
             self.scenario.Run()
 
+        def Build(self):
+            return self.scenario
 
     class Assertion:
 
@@ -95,6 +104,34 @@ class Scenario:
     def When(self, event, *args, **kwargs):
         self.add_event(event, args, kwargs)
         return Scenario.Event(self)
+
+
+    def WithConditionsFrom(self, parent):
+        if not isinstance(parent, Scenario):
+            raise ValueError("Parent must be a scenario")
+
+        self.conditions.extend(parent.conditions)
+
+        return self
+
+    def WithEventsFrom(self, parent):
+        if not isinstance(parent, Scenario):
+            raise ValueError("Parent must be a scenario")
+
+        self.events.extend(parent.events)
+
+        return self
+
+    def WithClausesFrom(self, parent):
+        if not isinstance(parent, Scenario):
+            raise ValueError("Parent must be a scenario")
+
+        self.clauses.extend(parent.clauses)
+
+        return self 
+
+    def Build(self):
+         return self
 
     def Run(self):
 

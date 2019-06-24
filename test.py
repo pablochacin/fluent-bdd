@@ -30,6 +30,8 @@ def main():
     Scenario("Multiple Conditions").Given(sut.f0).And(sut.f1,'a').When(sut.f2, 1, 2).Then(echo, True).Is(True).Run()
     Scenario("Kwargs").When(sut.fkw, a=1, b=2, c=3).Then(echo, True).Is(True).Run()
     Scenario("Invalid Kwargs").When(sut.fkw, a=1, b=2, d=3).Then(echo, True).Is(True).Run()
+    parent = Scenario("Parent").Given(sut.f0).And(sut.f2,'a','b').Build()
+    Scenario("Copying Conditions").WithConditionsFrom(parent).When(sut.f2, 1, 2).Then(echo, True).Is(True).Run()
     Scenario("Failing Assertion").Given(sut.f0).When(sut.f2, 1, 2).Then(echo, True).IsNot(True).Run()
     Scenario("Failing condition").Given(sut.f0).When(sut.fail).Then(echo, True).Is(True).Run()
     Scenario("Wrong function arity").Given(sut.f0).When(sut.f1,1,2).Then(echo, True).Is(True).Run()

@@ -59,5 +59,32 @@ Supported assertions are:
 * Is(value)
 * IsNot(value)
 
+## Reusing scenarios
+
+In some cases, multiple scenarios share the same Conditions. In that case, it is possible
+to define a base scenario and use it as a basis for other scenarios.
+Events, and Clauses, can also be copied.
+
+For reusing a scenario, it must be built (not executed)
+
+Example:
+    ```
+    base = Scenario("Base")       \
+                .Given(f,a, b)    \
+                .Given(g,1)       \
+                .Build()       
+
+    Scenario("Test 1")            \
+        .WithConditionsFrom(base) \
+        .When(f1,'c')             \
+        .Then(f2).Is(True)        \
+        .Run()
+
+    Scenario("Test 2")            \
+        .WithConditionsFrom(base) \
+        .When(f,'a')              \
+        .Then(f2).Is(False)       \
+        .Run()
+    ```
 
 (c) 2019 Pablo Chacin
