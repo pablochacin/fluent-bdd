@@ -61,8 +61,8 @@ Supported assertions are:
 
 ## Reusing scenarios
 
-In some cases, multiple scenarios share the same Conditions. In that case, it is possible
-to define a base scenario and use it as a basis for other scenarios.
+In some cases, multiple scenarios share the same Conditions or values. In that case,
+it is possible to define a base scenario and use it as a basis for other scenarios.
 Events, and Clauses, can also be copied.
 
 For reusing a scenario, it must be built (not executed)
@@ -86,5 +86,40 @@ Example:
         .Then(f2).Is(False)       \
         .Run()
     ```
+## Using values
+
+Sometimes is convenient to execute the same test Scenario with multiple arguments for
+the different statements. The `WithValues` function allows setting a list of named
+parameters which can be used in any statement. Named arguments are references using
+its name enclosed in '{}'.
+
+Example:
+    ```
+    Scenario("With Values") \
+	    .AsVerbose()
+            .WithValues(('a', 'b','c','d'), \
+                 [(1,2,True,True),          \
+                  (2,3,True,False)])        \
+            .Given(sut.f0)                  \
+            .When(sut.f2, '{a}', 'b')       \
+            .Then(echo, '{c}').Is('{d}')    \
+            .Run()
+
+    Executing 'With Values' with values {'a': 1, 'b': 2, 'c': True, 'd': True}
+      Executing condition f0()
+      Executing event f2(1,b)
+      Executing clause echo(True)
+    Scenario 'With Values' success
+
+    Executing 'With Values' with values {'a': 2, 'b': 3, 'c': True, 'd': False}
+      Executing condition f0()
+      Executing event f2(2,b)
+      Executing clause echo(True)
+    Scenario 'With Values' failed: Clause echo(True) failed with error: assertion Is(True,False) failed
+   ```
+   Notice the function `f2` is called with the literal `b` as second argument while
+   the first argument `{a}` is replaced on each execution with the correspoding
+   value.
+
 
 (c) 2019 Pablo Chacin
