@@ -25,41 +25,48 @@ def main():
 
     sut = SUT()
 
-    Feature("My feature")         \
-        .Scenario("Success Test") \
+    with Feature("My feature") as f:        
+        f.Scenario("Success Test") \
             .Given(sut.f0).When(sut.f2, 1, 2) \
-            .Then(echo, True).Is(True) \
-        .Scenario("With Values") \
+            .Then(echo, True).Is(True) 
+
+        f.Scenario("With Values") \
             .WithValues(('a', 'b','c'), [(1,2,True), (2,3,False)]) \
             .Given(sut.f0) \
             .When(sut.f2, 'a', '{b}')  \
             .Then(echo, True).Is('{c}') \
-        .Scenario("No Conditions") \
+
+        f.Scenario("No Conditions") \
             .When(sut.f2, 1, 2) \
-            .Then(echo, True).Is(True) \
-        .Scenario("Multiple Conditions") \
+            .Then(echo, True).Is(True) 
+
+        f.Scenario("Multiple Conditions") \
             .Given(sut.f0) \
             .And(sut.f1,'a') \
             .When(sut.f2, 1, 2) \
-            .Then(echo, True).Is(True) \
-        .Scenario("Kwargs") \
+            .Then(echo, True).Is(True) 
+
+        f.Scenario("Kwargs") \
             .When(sut.fkw, a=1, b=2, c=3) \
-            .Then(echo, True).Is(True) \
-        .Scenario("Invalid Kwargs") \
+            .Then(echo, True).Is(True) 
+
+        f.Scenario("Invalid Kwargs") \
             .When(sut.fkw, a=1, b=2, d=3) \
-            .Then(echo, True).Is(True) \
-        .Scenario("Failing Assertion") \
+            .Then(echo, True).Is(True) 
+
+        f.Scenario("Failing Assertion") \
             .Given(sut.f0).When(sut.f2, 1, 2) \
             .Then(echo, False).Is(True) \
-        .Scenario("Failing condition") \
+
+        f.Scenario("Failing condition") \
             .Given(sut.f0) \
             .When(sut.fail) \
-            .Then(echo, True).Is(True) \
-        .Scenario("Wrong function arity") \
+            .Then(echo, True).Is(True) 
+
+        f.Scenario("Wrong function arity") \
             .Given(sut.f0) \
             .When(sut.f1,1,2) \
-            .Then(echo, True).Is(True) \
-        .Test()
+            .Then(echo, True).Is(True) 
 
     Feature("My feature with background") \
         .Background().Given(sut.f0).And(sut.f2,'a','b') \
