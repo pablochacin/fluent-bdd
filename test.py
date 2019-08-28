@@ -1,4 +1,4 @@
-from bdd import Scenario
+from bdd import Feature
 
 def echo(a):
     return a
@@ -25,17 +25,48 @@ def main():
 
     sut = SUT()
 
-    Scenario("Success Test").Given(sut.f0).When(sut.f2, 1, 2).Then(echo, True).Is(True).Run()
-    Scenario("With Values").WithValues(('a', 'b','c'), [(1,2,True), (2,3,False)]).Given(sut.f0).When(sut.f2, 'a', '{b}').Then(echo, True).Is('{c}').Run()
-    Scenario("No Conditions").When(sut.f2, 1, 2).Then(echo, True).Is(True).Run()
-    Scenario("Multiple Conditions").Given(sut.f0).And(sut.f1,'a').When(sut.f2, 1, 2).Then(echo, True).Is(True).Run()
-    Scenario("Kwargs").When(sut.fkw, a=1, b=2, c=3).Then(echo, True).Is(True).Run()
-    Scenario("Invalid Kwargs").When(sut.fkw, a=1, b=2, d=3).Then(echo, True).Is(True).Run()
-    parent = Scenario("Parent").Given(sut.f0).And(sut.f2,'a','b').Build()
-    Scenario("Copying Conditions").WithConditionsFrom(parent).When(sut.f2, 1, 2).Then(echo, True).Is(True).Run()
-    Scenario("Failing Assertion").Given(sut.f0).When(sut.f2, 1, 2).Then(echo, False).IsNot(False).Run()
-    Scenario("Failing condition").Given(sut.f0).When(sut.fail).Then(echo, True).Is(True).Run()
-    Scenario("Wrong function arity").Given(sut.f0).When(sut.f1,1,2).Then(echo, True).Is(True).Run()
+    Feature("My feature")         \
+        .Scenario("Success Test") \
+            .Given(sut.f0).When(sut.f2, 1, 2) \
+            .Then(echo, True).Is(True) \
+        .Scenario("With Examples") \
+            .Examples(('a', 'b','c'), [(1,2,True), (2,3,False)]) \
+            .Given(sut.f0) \
+            .When(sut.f2, 'a', '{b}')  \
+            .Then(echo, True).Is('{c}') \
+        .Scenario("No Conditions") \
+            .When(sut.f2, 1, 2) \
+            .Then(echo, True).Is(True) \
+        .Scenario("Multiple Conditions") \
+            .Given(sut.f0) \
+            .And(sut.f1,'a') \
+            .When(sut.f2, 1, 2) \
+            .Then(echo, True).Is(True) \
+        .Scenario("Kwargs") \
+            .When(sut.fkw, a=1, b=2, c=3) \
+            .Then(echo, True).Is(True) \
+        .Scenario("Invalid Kwargs") \
+            .When(sut.fkw, a=1, b=2, d=3) \
+            .Then(echo, True).Is(True) \
+        .Scenario("Failing Assertion") \
+            .Given(sut.f0).When(sut.f2, 1, 2) \
+            .Then(echo, False).Is(True) \
+        .Scenario("Failing condition") \
+            .Given(sut.f0) \
+            .When(sut.fail) \
+            .Then(echo, True).Is(True) \
+        .Scenario("Wrong function arity") \
+            .Given(sut.f0) \
+            .When(sut.f1,1,2) \
+            .Then(echo, True).Is(True) \
+        .Test()
+
+    Feature("My feature with background") \
+        .Background().Given(sut.f0).And(sut.f2,'a','b') \
+        .Scenario("Copying Conditions") \
+            .When(sut.f2, 1, 2) \
+            .Then(echo, True).Is(True) \
+        .Test()
 
 if __name__ == "__main__":
     main()

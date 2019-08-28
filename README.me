@@ -2,6 +2,8 @@
 
 Fluent BDD is a minimalistic testing framework with a fluent API.
 
+A Feauture is tested by means of a series of Scenarios.
+
 A Scenario is defined as a sequence of Conditions, followed by
 a series of Events and the Clauses that must be satiesfied at
 the end. Multiple Conditions, Events and Clauses can be specified.
@@ -12,19 +14,14 @@ The API for defining a test scenario follows a fluent style.
 Function calls can be chanined in a close-to-english syntax.
 
 Example:
-    ```
-    Scenario("Test scenario").Given(f1, 1, 'A').When(f2,1, a=3, b=2).Then(f3).Is(True).Run()
-    ```
-
-Multiple Conditions, Events and Clauses can be chained using the 'And' connector:
-
-Example:
-    ```
-    Scenario("Multiple conditions")        \
+```
+Feature("My feature") \
+    .Scenario("Multiple conditions")        \
         .Given(f1, 1, 'B').And(f1, 1, 'A') \
         .When(f2, a=3, b=1)                \
         .Then(f3).Is(True)                 \
-        .Run()
+    .Test()
+```
 
 ## Function invocation
 
@@ -39,11 +36,11 @@ Example:
     ```
     class SUT:
         
-	def f(self):
+    def f(self):
             return
-	
-	def v(self):
-	    return True
+    
+    def v(self):
+        return True
 
     def verify(sut):
         return sut.v()
@@ -59,64 +56,59 @@ Supported assertions are:
 * Is(value)
 * IsNot(value)
 
-## Reusing scenarios
+## Background
 
-In some cases, multiple scenarios share the same Conditions or values. In that case,
-it is possible to define a base scenario and use it as a basis for other scenarios.
-Events, and Clauses, can also be copied.
+In some cases, multiple scenarios share the same Conditions. In that case,
+it is possible to define a Background with the common conditions, which are
+copied to all Scenarios in the Feature.
 
-For reusing a scenario, it must be built (not executed)
 
 Example:
-    ```
-    base = Scenario("Base")       \
-                .Given(f,a, b)    \
-                .Given(g,1)       \
-                .Build()       
-
-    Scenario("Test 1")            \
-        .WithConditionsFrom(base) \
+```
+Feature("With Background") \ 
+    .Background()       \
+         .Given(f,a, b)    \
+         .Given(g,1)       \
+    .Scenario("Test 1")            \
         .When(f1,'c')             \
         .Then(f2).Is(True)        \
-        .Run()
-
-    Scenario("Test 2")            \
-        .WithConditionsFrom(base) \
+    .Scenario("Test 2")            \
         .When(f,'a')              \
         .Then(f2).Is(False)       \
-        .Run()
+    .Test()
     ```
-## Using values
+## Using examples
 
 Sometimes is convenient to execute the same test Scenario with multiple arguments for
-the different statements. The `WithValues` function allows setting a list of named
+the different statements. The `Examples` function allows setting a list of named
 parameters which can be used in any statement. Named arguments are references using
 its name enclosed in '{}'.
 
 Example:
-    ```
-    Scenario("With Values") \
-	    .AsVerbose()
-            .WithValues(('a', 'b','c','d'), \
+```
+    Feature("Scenario With examples") \
+        .Scenario("With Examples") \
+            .AsVerbose()
+            .Examples(('a', 'b','c','d'), \
                  [(1,2,True,True),          \
                   (2,3,True,False)])        \
             .Given(sut.f0)                  \
             .When(sut.f2, '{a}', 'b')       \
             .Then(echo, '{c}').Is('{d}')    \
-            .Run()
+         .Test()
 
-    Executing 'With Values' with values {'a': 1, 'b': 2, 'c': True, 'd': True}
-      Executing condition f0()
-      Executing event f2(1,b)
-      Executing clause echo(True)
-    Scenario 'With Values' success
+        Executing 'With Examples' with values {'a': 1, 'b': 2, 'c': True, 'd': True}
+          Executing condition f0()
+          Executing event f2(1,b)
+          Executing clause echo(True)
+        Scenario 'With Examples' success
 
-    Executing 'With Values' with values {'a': 2, 'b': 3, 'c': True, 'd': False}
-      Executing condition f0()
-      Executing event f2(2,b)
-      Executing clause echo(True)
-    Scenario 'With Values' failed: Clause echo(True) failed with error: assertion Is(True,False) failed
-   ```
+        Executing 'With Examples' with values {'a': 2, 'b': 3, 'c': True, 'd': False}
+          Executing condition f0()
+          Executing event f2(2,b)
+          Executing clause echo(True)
+        Scenario 'With Examples' failed: Clause echo(True) failed with error: assertion Is(True,False) failed
+ ```
    Notice the function `f2` is called with the literal `b` as second argument while
    the first argument `{a}` is replaced on each execution with the correspoding
    value.

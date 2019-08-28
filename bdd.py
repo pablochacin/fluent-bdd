@@ -1,3 +1,53 @@
+class Feature:
+
+    class BackgroundCls:
+
+        class Condition:
+
+            def __init__(self, background):
+                self.background = background
+
+            def And(self, condition, *args, **kwargs):
+                self.background.conditions.append((condition, args, kwargs))
+                return Feature.BackgroundCls.Condition(self.background)
+
+            def Scenario(self, title):
+                return self.background.feature.Scenario(title)
+
+         
+        def __init__(self, feature):
+            self.feature = feature
+            self.conditions = []
+
+        def Given(self, condition, *args, **kwargs):
+            self.conditions.append((condition, args, kwargs))
+            return Feature.BackgroundCls.Condition(self)
+
+    def __init__(self, name):
+        self.name = name
+        self.scenarios = []
+        self.background = None
+
+    def Background(self):
+        if self.background is not None:
+           raise Exception("Background already defined")
+
+        if len(self.scenarios) > 0:
+           raise Exception("Background must be defined before Scenarios")
+
+        self.background = Feature.BackgroundCls(self)
+        return self.background
+
+    def Scenario(self, title):
+        s = Scenario(self, title)
+        self.scenarios.append(s)
+        return s
+
+    def Test(self):
+        print("Testing feature {}".format(self.name))
+        for s in self.scenarios:
+            s.Run()
+ 
 class Scenario:
 
     class Condition:
@@ -14,7 +64,7 @@ class Scenario:
             return Scenario.Event(self.scenario)
 
         def Build(self):
-            return self.scenario
+            return self.scenario.Test()
 
 
     class Event:
@@ -29,8 +79,8 @@ class Scenario:
         def Then(self, clause, *args, **kwargs):
             return Scenario.OpenClause(self.scenario, clause, args, kwargs)
 
-        def Build(self):
-            return self.scenario
+        def Test(self):
+            return self.scenario.Test()
 
     class OpenClause:
 
@@ -56,11 +106,11 @@ class Scenario:
         def And(self, clause, *args, **kwargs):
             return Scenario.OpenClause(self.scenario, clause, args, kwargs)
 
-        def Run(self):
-            self.scenario.Run()
+        def Test(self):
+            self.scenario.Test()
 
-        def Build(self):
-            return self.scenario
+        def Scenario(self, title):
+            return self.scenario.feature.Scenario(title)
 
     class Assertion:
 
@@ -73,13 +123,17 @@ class Scenario:
             return expected != actual
 
 
-    def __init__(self, title):
+    def __init__(self, feature, title):
+        self.feature = feature
         self.title = title
         self.conditions = []
         self.events = []
         self.clauses = []
         self.args_map = {}
-        self.values = [()]
+        self.examples = [()]
+
+        if feature.background:
+            self.conditions.extend(feature.background.conditions)
 
     def add_condition(self, condition, args, kwargs):
         if not condition.__call__:
@@ -108,40 +162,16 @@ class Scenario:
         return Scenario.Event(self)
 
 
-    def WithConditionsFrom(self, parent):
-        if not isinstance(parent, Scenario):
-            raise ValueError("Parent must be a scenario")
+    def Examples(self, arg_names, examples):
 
-        self.conditions.extend(parent.conditions)
+        if self.args_map:
+           raise Exception("A Scenario can only have one set of examples")
 
-        return self
-
-    def WithEventsFrom(self, parent):
-        if not isinstance(parent, Scenario):
-            raise ValueError("Parent must be a scenario")
-
-        self.events.extend(parent.events)
-
-        return self
-
-    def WithClausesFrom(self, parent):
-        if not isinstance(parent, Scenario):
-            raise ValueError("Parent must be a scenario")
-
-        self.clauses.extend(parent.clauses)
-
-        return self 
-
-    def Build(self):
-         return self
-
-    def WithValues(self, arg_names, values):
-
-        for index, args in enumerate(values):
+        for index, args in enumerate(examples):
             if len(arg_names) != len(args):
                 raise ValueError("Value tuple {} does not match number of argument names".format(index))
 
-        self.values = values
+        self.examples = examples
         self.args_map = {}
         for arg_pos, arg in enumerate(arg_names):
             if not isinstance(arg, str):
@@ -152,16 +182,16 @@ class Scenario:
 
         return self
 
+    def Test(self):
+        self.feature.Test()
+
     def Run(self):
 
-        if self.values:
-            runs = len(self.values)
-        else:
-            runs = 1
+        runs = len(self.examples)
 
         for r in range(runs):
             try:
-                values_map = self._map_values(self.args_map, self.values[r])
+                values_map = self._map_values(self.args_map, self.examples[r])
         
                 if len(self.events) == 0:
                     raise ValueError("No events specified for scenario {}".format(self.title))
@@ -230,7 +260,7 @@ class Scenario:
 
     def _bind_args(self, args, kwargs, values_map):
         
-        if not self.values:
+        if not self.examples:
            return args, kwargs
 
         args_values = []
