@@ -28,6 +28,12 @@ class Feature:
         self.scenarios = []
         self.background = None
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self,*args):
+        return self.Test()
+
     def Background(self):
         if self.background is not None:
            raise Exception("Background already defined")
@@ -79,8 +85,6 @@ class Scenario:
         def Then(self, clause, *args, **kwargs):
             return Scenario.OpenClause(self.scenario, clause, args, kwargs)
 
-        def Test(self):
-            return self.scenario.Test()
 
     class OpenClause:
 
@@ -107,7 +111,7 @@ class Scenario:
             return Scenario.OpenClause(self.scenario, clause, args, kwargs)
 
         def Test(self):
-            self.scenario.Test()
+            self.scenario.feature.Test()
 
         def Scenario(self, title):
             return self.scenario.feature.Scenario(title)
@@ -181,9 +185,6 @@ class Scenario:
             self.args_map[arg] = arg_pos
 
         return self
-
-    def Test(self):
-        self.feature.Test()
 
     def Run(self):
 

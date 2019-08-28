@@ -114,4 +114,24 @@ Example:
    value.
 
 
+## Feature as a context manager
+
+Feature class implements the Context Manager interface and can be used in `with` statements for improved legibility when chaining multiple scenarios. The `Test` method is invoked automatically when closing the `with` statement. 
+
+```
+with Feature("With Background") as f:
+    f.Background()       \
+         .Given(f,a, b)    \
+         .Given(g,1)       
+
+    f.Scenario("Test 1")            \
+        .When(f1,'c')             \
+        .Then(f2).Is(True)        
+
+    f.Scenario("Test 2")            \
+        .When(f,'a')              \
+        .Then(f2).Is(False)
+```
+
+
 (c) 2019 Pablo Chacin
