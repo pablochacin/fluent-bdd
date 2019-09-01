@@ -1,4 +1,4 @@
-from bdd import Feature
+from fluent_bdd import FeatureBuilder
 
 def echo(a):
     return a
@@ -25,7 +25,7 @@ def main():
 
     sut = SUT()
 
-    with Feature("My feature") as f:        
+    with FeatureBuilder("My feature") as f:        
         f.Scenario("Success Test") \
             .Given(sut.f0).When(sut.f2, 1, 2) \
             .Then(echo, True).Is(True) 
@@ -68,7 +68,7 @@ def main():
             .When(sut.f1,1,2) \
             .Then(echo, True).Is(True) 
 
-    Feature("My feature with background") \
+    FeatureBuilder("My feature with background") \
         .Background().Given(sut.f0).And(sut.f2,'a','b') \
         .Scenario("Copying Conditions") \
             .When(sut.f2, 1, 2) \

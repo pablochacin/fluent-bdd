@@ -1,131 +1,49 @@
 class Feature:
 
-    class BackgroundCls:
-
-        class Condition:
-
-            def __init__(self, background):
-                self.background = background
-
-            def And(self, condition, *args, **kwargs):
-                self.background.conditions.append((condition, args, kwargs))
-                return Feature.BackgroundCls.Condition(self.background)
-
-            def Scenario(self, title):
-                return self.background.feature.Scenario(title)
-
-         
-        def __init__(self, feature):
-            self.feature = feature
+    class Background:
+        
+        def __init__(self):
             self.conditions = []
 
-        def Given(self, condition, *args, **kwargs):
+        def addCondition(self, condition, *args, **kwargs):
             self.conditions.append((condition, args, kwargs))
-            return Feature.BackgroundCls.Condition(self)
+        
+        def getConditions(self):
+            return self.conditions
 
     def __init__(self, name):
         self.name = name
         self.scenarios = []
         self.background = None
 
-    def __enter__(self):
-        return self
-
-    def __exit__(self,*args):
-        return self.Test()
-
-    def Background(self):
+    def setBackground(self, b):
         if self.background is not None:
            raise Exception("Background already defined")
 
         if len(self.scenarios) > 0:
            raise Exception("Background must be defined before Scenarios")
 
-        self.background = Feature.BackgroundCls(self)
-        return self.background
+        self.background = b
 
-    def Scenario(self, title):
-        s = Scenario(self, title)
+    def addScenario(self, s):
         self.scenarios.append(s)
-        return s
 
-    def Test(self):
+    def test(self):
         print("Testing feature {}".format(self.name))
         for s in self.scenarios:
-            s.Run()
+            s.run()
  
+class Assertion:
+
+    @staticmethod
+    def Is(expected, actual):
+        return expected == actual
+
+    @staticmethod
+    def IsNot(expected, actual):
+        return expected != actual
+
 class Scenario:
-
-    class Condition:
-
-        def __init__(self, scenario):
-           self.scenario = scenario
-
-        def And(self, condition, *args, **kwargs):
-            self.scenario.add_condition(condition, args, kwargs)
-            return Scenario.Condition(self.scenario)
-
-        def When(self, event, *args, **kwargs):
-            self.scenario.add_event(event, args, kwargs)
-            return Scenario.Event(self.scenario)
-
-        def Build(self):
-            return self.scenario.Test()
-
-
-    class Event:
-
-        def __init__(self, scenario):
-           self.scenario = scenario
-
-        def And(self, event, *args, **kwargs):
-            self.scenario.add_event(event, args, kwargs)
-            return Scenario.Event(self.scenario)
-
-        def Then(self, clause, *args, **kwargs):
-            return Scenario.OpenClause(self.scenario, clause, args, kwargs)
-
-
-    class OpenClause:
-
-        def __init__(self, scenario, clause, args, kwargs):
-            self.scenario = scenario
-            self.clause = clause
-            self.args = args
-            self.kwargs = kwargs
-
-        def Is(self, value):
-            self.scenario.add_clause(self.clause, self.args, self.kwargs, Scenario.Assertion.Is, value)
-            return Scenario.Clause(self.scenario)
-
-        def IsNot(self, value):
-            self.scenario.add_clause(self.clause, self.args, self.kwargs, Scenario.Assertion.IsNot, value)
-            return Scenario.Clause(self.scenario)
-
-    class Clause:
-
-        def __init__(self, scenario):
-           self.scenario = scenario
-
-        def And(self, clause, *args, **kwargs):
-            return Scenario.OpenClause(self.scenario, clause, args, kwargs)
-
-        def Test(self):
-            self.scenario.feature.Test()
-
-        def Scenario(self, title):
-            return self.scenario.feature.Scenario(title)
-
-    class Assertion:
-
-        @staticmethod
-        def Is(expected, actual):
-            return expected == actual
-
-        @staticmethod
-        def IsNot(expected, actual):
-            return expected != actual
-
 
     def __init__(self, feature, title):
         self.feature = feature
@@ -139,34 +57,26 @@ class Scenario:
         if feature.background:
             self.conditions.extend(feature.background.conditions)
 
-    def add_condition(self, condition, args, kwargs):
+    def addCondition(self, condition, *args, **kwargs):
         if not condition.__call__:
             raise ValueError("Condition must be a callable")
 
         self.conditions.append((condition, args, kwargs))
     
-    def add_event(self, event, args, kwargs):
+    def addEvent(self, event, *args, **kwargs):
         if not event.__call__:
             raise ValueError("Condition must be a callable")
 
         self.events.append((event, args, kwargs))
     
-    def add_clause(self, clause, args, kwargs, assertion, value):
+    def addClause(self, clause, assertion, value, *args, **kwargs):
         if not clause.__call__:
             raise ValueError("Condition must be a callable")
 
         self.clauses.append((clause, args, kwargs, assertion, value))
-    
-    def Given(self, condition, *args, **kwargs):
-        self.add_condition(condition, args, kwargs)
-        return Scenario.Condition(self)
-
-    def When(self, event, *args, **kwargs):
-        self.add_event(event, args, kwargs)
-        return Scenario.Event(self)
 
 
-    def Examples(self, arg_names, examples):
+    def setExamples(self, arg_names, examples):
 
         if self.args_map:
            raise Exception("A Scenario can only have one set of examples")
@@ -184,9 +94,7 @@ class Scenario:
                 raise ValueError("Value names must be unique: {}".format(arg))
             self.args_map[arg] = arg_pos
 
-        return self
-
-    def Run(self):
+    def run(self):
 
         runs = len(self.examples)
 
@@ -286,4 +194,4 @@ class Scenario:
             
         signature = signature+")"
 
-        return signature
+        return signature    
