@@ -31,7 +31,10 @@ class Feature:
     def test(self):
         print("Testing feature {}".format(self.name))
         for s in self.scenarios:
-            s.run()
+            try:
+                s.run()
+            except Exception as ex:
+                print("Exception running scenario '{}': {}".format(s.title, ex))
  
 class Assertion:
 
@@ -61,19 +64,19 @@ class Scenario:
         if not condition.__call__:
             raise ValueError("Condition must be a callable")
 
-        self.conditions.append((condition, args, kwargs))
+        self.conditions.append(Scenario.Condition(condition, args, kwargs))
     
     def addEvent(self, event, *args, **kwargs):
         if not event.__call__:
-            raise ValueError("Condition must be a callable")
+            raise ValueError("Event must be a callable")
 
-        self.events.append((event, args, kwargs))
+        self.events.append(Scenario.Event(event, args, kwargs))
     
     def addClause(self, clause, assertion, value, *args, **kwargs):
         if not clause.__call__:
-            raise ValueError("Condition must be a callable")
+            raise ValueError("Clause must be a callable")
 
-        self.clauses.append((clause, args, kwargs, assertion, value))
+        self.clauses.append(Scenario.Clause(clause, args, kwargs, assertion, value))
 
     def setValues(self, arg_names, values):
 
@@ -93,52 +96,17 @@ class Scenario:
                 raise ValueError("Value names must be unique: {}".format(arg))
             self.args_map[arg] = arg_pos
 
-    def run(self):
 
-        runs = len(self.values)
+    def _getArgsValues(self, values):
+        argsValues = {}
 
-        for r in range(runs):
-            try:
-                values_map = self._map_values(self.args_map, self.values[r])
-        
-                if len(self.events) == 0:
-                    raise ValueError("No events specified for scenario {}".format(self.title))
-                
-                if len(self.clauses) == 0:
-                    raise ValueError("No clauses specified for scenario {}".format(self.title))
-                
-                for condition, args, kwargs in self.conditions:
-                    try:
-                        self._execute(condition, args, kwargs, values_map)
-                    except Exception as ex:
-                        condition_str = self._signature(condition, args, kwargs, values_map)
-                        raise Exception("Condition {} Failed with error: {}".format(condition_str, ex))
+        if not values or len(values) == 0:
+            return argsValues
 
-                for event, args, kwargs in self.events:
-                    try:
-                        self._execute(event, args, kwargs, values_map)
-                    except Exception as ex:
-                        event_str = self._signature(event, args, kwargs, values_map)
-                        raise Exception("Event {} Failed with error: {}".format(event_str, ex))
+        for arg, pos in self.arg:
+            argsValues[arg] = values[pos]
 
-                for clause, args, kwargs, assertion, value in self.clauses:
-                    clause_str = self._signature(clause, args, kwargs, values_map)
-                    result = None
-                    try:
-                        result = self._execute(clause, args, kwargs, values_map)
-                    except Exception as ex:
-                         raise Exception("Clause {} Failed with error: {}".format(clause_str, ex))
-
-                    assertion_value = self._bind_arg(value, values_map)
-                    if not assertion(result, assertion_value):
-                        raise Exception("Clause {} {} '{}' Actual '{}' ".format(clause_str, assertion.__name__, assertion_value, result))
-
-                print("Scenario {} success".format(self.title))
-
-            except Exception as ex:
-                print("Scenario {} failed: {}".format(self.title, ex))
-            finally:
-                self.current_run = 0
+        return args_map
 
     def _map_values(self, args_map, values):
         values_map = {}
@@ -146,51 +114,146 @@ class Scenario:
             values_map[arg_name] = values[pos]
         return values_map
 
-    def _execute(self, func, args, kwargs, values_map):
-         args_values, kwargs_values = self._bind_args(args, kwargs, values_map)
-         return func(*args_values, **kwargs_values)
-      
-    def _bind_arg(self, arg, values_map):
-        # a unbound arg must be a string 
-        if not isinstance(arg, str):
-            return arg
+    def run(self):
 
-        left = arg.find('{')
-        right = arg.rfind('}')
-        if left <0 or right < 0 or right <= left:
-             return arg
-	
-        arg_name = arg[left+1:right]
-        try:
-            return values_map[arg_name]
-        except KeyError:
-            raise ValueError("Argument {} not defined".format(arg))
+        if len(self.conditions) == 0:
+            raise ValueError("No conditions specified for scenario {}".format(self.title))
+             
+        if len(self.events) == 0:
+            raise ValueError("No events specified for scenario {}".format(self.title))
+             
+        if len(self.clauses) == 0:
+            raise ValueError("No clauses specified for scenario {}".format(self.title))
+                
 
-    def _bind_args(self, args, kwargs, values_map):
+        functions = []
+        functions.extend(self.conditions)
+        functions.extend(self.events)
+        functions.extend(self.clauses)
+
+	# values has default value an empty tuple of values, so always there is at least one value
+        runs = len(self.values)
+        for r in range(runs):
+            try:
+                values_map = self._map_values(self.args_map, self.values[r])
+                closure = Scenario.Closure(values_map)
+
+                for function in functions:
+                    try:
+                        function.enclose(closure)
+                        function.execute()
+                    except Exception as ex:
+                        raise Exception(" {} {} Failed: {}".format(function.type(), function.signature(), ex))
+
+                print("Scenario {} success".format(self.title))
+
+            except Exception as ex:
+                print("Scenario {} failed: {}".format(self.title, ex))
+
+    class Closure:
         
-        if not self.values:
-           return args, kwargs
+        def __init__(self, values_map):
+            self.values_map = values_map
 
-        args_values = []
-        for arg in args:
-            args_values.append(self._bind_arg(arg, values_map))
+        def bind_arg(self, arg):
+            # a unbound arg must be a string 
+            if not isinstance(arg, str):
+                return arg
+
+            left = arg.find('{')
+            right = arg.rfind('}')
+            if left <0 or right < 0 or right <= left:
+                 return arg
         
-        kwargs_values = {}
-        for arg_name, arg_value in kwargs.items():
-            kwargs_values[arg_name] = self._bind_arg(arg_name, values_map)
+            arg_name = arg[left+1:right]
+            try:
+                return self.values_map[arg_name]
+            except KeyError:
+                raise ValueError("Argument {} not defined".format(arg))
 
-        return tuple(args_values), kwargs_values
-
-    def _signature(self, function, args, kwargs, values_map):
-        args_values, kwargs_values = self._bind_args(args, kwargs, values_map)
-
-        signature = "{}(".format(function.__name__)
-        if args:
-            signature = signature + (",".join(["%s"]*len(args_values)) % args_values)
-        
-        if kwargs:
-            signature = signature + ','.join('{}={}'.format(k,v) for k,v in kwargs_values.items())
+        def bind_args(self, args, kwargs):
             
-        signature = signature+")"
+            if not self.values_map:
+               return args, kwargs
+    
+            args_values = []
+            for arg in args:
+                args_values.append(self.bind_arg(arg))
+            
+            kwargs_values = {}
+            for arg_name, arg_value in kwargs.items():
+                kwargs_values[arg_name] = self.bind_arg(arg_value)
+            
+            return args_values, kwargs_values
+    
+    class Function: 
 
-        return signature    
+        def __init__(self, func, args, kwargs):
+            self.func = func
+            self.args = args
+            self.kwargs = kwargs
+            self.closure = Scenario.Closure({})
+
+        def enclose(self, closure):
+            self.closure = closure
+
+        def execute(self):
+            args_values, kwargs_values = self.closure.bind_args(self.args, self.kwargs) 
+            return self.func(*args_values, **kwargs_values)
+     
+        def signature(self):
+            signature = "{}(".format(self.func.__name__)
+            if self.args:
+                signature = signature + (",".join(["%s"]*len(self.args)) % self.args)
+            
+            if self.kwargs:
+                signature = signature + ','.join('{}={}'.format(k,v) for k,v in self.kwargs.items())
+                
+            signature = signature+")"
+
+            return signature 
+
+
+    class Condition(Function):
+     
+        @staticmethod
+        def type():
+            return "Condition"
+
+        def __init__(self, func, args, kwargs):
+            super().__init__(func, args, kwargs)
+
+        def execute(self):
+            super().execute()
+
+    class Event(Function):
+     
+        @staticmethod
+        def type():
+            return "Event"
+
+        def __init__(self, func, args, kwargs):
+            super().__init__(func, args, kwargs)
+
+        
+    class Clause(Function):
+
+        @staticmethod
+        def type():
+            return "Clause"
+
+        def __init__(self, func, args, kwargs, assertion, value):
+            super().__init__(func, args, kwargs)
+            self.assertion = assertion
+            self.value = value
+             
+        def execute(self):
+            result = super().execute()
+
+            assertion_value = self.closure.bind_arg(self.value)
+            if not self.assertion(result, assertion_value):
+                raise Exception("Result '{}' does not satisfy assertion {} '{}'".format(result, self.assertion.__name__, assertion_value))
+
+        def signature(self):
+            sig = super().signature()
+            return "{}.{}({})".format(sig, self.assertion.__name__, self.closure.bind_arg(self.value))
