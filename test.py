@@ -6,19 +6,18 @@ def echo(a):
 class SUT:
 
     def f0(self):
-        print("Executing f0()")
+        pass
 
     def f1(self, a):
-        print("Executing f1({})".format(a))
+        pass
 
     def f2(self, a, b):
-        print("Executing f2({},{})".format(a, b))
+        pass
 
     def fkw(self, a=None, b=None, c=None):
-        print("Executing fkw(a={}, b={}, c={})".format(a, b, c))
+        pass
 
     def fail(self):
-        print("Executing fail()")
         raise Exception("Fail!")
 
 def main():
@@ -69,11 +68,11 @@ def main():
             .Then(echo, True).Is(True) 
 
     FeatureBuilder("My feature with background") \
-        .Background().Given(sut.f0).And(sut.f2,'a','b') \
-        .Scenario("Copying Conditions") \
-            .When(sut.f2, 1, 2) \
-            .Then(echo, True).Is(True) \
-        .Test()
+            .Background().Given(sut.f0).And(sut.f2,'a','b') \
+            .Scenario("With Background") \
+                .When(sut.f2, 1, 2) \
+                .Then(echo, True).Is(True) \
+            .Test()
 
 if __name__ == "__main__":
     main()
