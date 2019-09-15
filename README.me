@@ -93,8 +93,8 @@ Example:
                  [(1,2,True,True),          \
                   (2,3,True,False)])        \
             .Given(sut.f0)                  \
-            .When(sut.f2, '{a}', 'b')       \
-            .Then(echo, '{c}').Is('{d}')    \
+            .When(sut.f2, '<a>', 'b')       \
+            .Then(echo, '<c>').Is('<d>')    \
          .Test()
 
         Executing 'With Examples' with values {'a': 1, 'b': 2, 'c': True, 'd': True}
@@ -110,7 +110,7 @@ Example:
         Scenario 'With Examples' failed: Clause echo(True) failed with error: assertion Is(True,False) failed
  ```
    Notice the function `f2` is called with the literal `b` as second argument while
-   the first argument `{a}` is replaced on each execution with the correspoding
+   the first argument `<a>` is replaced on each execution with the correspoding
    value.
 
 

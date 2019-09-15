@@ -168,8 +168,8 @@ class Scenario:
             if not isinstance(arg, str):
                 return arg
 
-            left = arg.find('{')
-            right = arg.rfind('}')
+            left = arg.find('<')
+            right = arg.rfind('>')
             if left <0 or right < 0 or right <= left:
                  return arg
         

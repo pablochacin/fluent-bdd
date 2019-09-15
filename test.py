@@ -32,8 +32,8 @@ def main():
         f.Scenario("With Examples") \
             .Examples(('a', 'b','c'), [(1,2,True), (2,3,False)]) \
             .Given(sut.f0) \
-            .When(sut.f2, 'a', '{b}')  \
-            .Then(echo, True).Is('{c}') \
+            .When(sut.f2, 'a', '<b>')  \
+            .Then(echo, True).Is('<c>') \
 
         f.Scenario("No Conditions") \
             .When(sut.f2, 1, 2) \
