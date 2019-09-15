@@ -30,10 +30,10 @@ def main():
             .Then(echo, True).Is(True) 
 
         f.Scenario("With Examples") \
-            .Examples(('a', 'b','c'), [(1,2,True), (2,3,False)]) \
             .Given(sut.f0) \
             .When(sut.f2, 'a', '<b>')  \
             .Then(echo, True).Is('<c>') \
+            .Examples(('a', 'b','c'), [(1,2,True), (2,3,False)]) \
 
         f.Scenario("No Conditions") \
             .When(sut.f2, 1, 2) \

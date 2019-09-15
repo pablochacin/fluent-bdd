@@ -79,6 +79,10 @@ class ScenarioBuilder:
         def Scenario(self, title):
             return self.scenarioBld.featureBld.Scenario(title)
 
+        def Examples(self, arg_names, examples):
+            self.scenarioBld.scenario.setExamples(arg_names, examples)
+            return self 
+
         def Test(self):
             return self.scenarioBld.featureBld.Test()
 
@@ -94,9 +98,6 @@ class ScenarioBuilder:
         self.scenario.addEvent(event, *args, **kwargs)
         return ScenarioBuilder.EventBuilder(self)
 
-    def Examples(self, arg_names, examples):
-        self.scenario.setExamples(arg_names, examples)
-        return self
 
 class FeatureBuilder:
 

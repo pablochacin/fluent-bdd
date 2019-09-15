@@ -89,12 +89,12 @@ Example:
     Feature("Scenario With examples") \
         .Scenario("With Examples") \
             .AsVerbose()
-            .Examples(('a', 'b','c','d'), \
-                 [(1,2,True,True),          \
-                  (2,3,True,False)])        \
             .Given(sut.f0)                  \
             .When(sut.f2, '<a>', 'b')       \
             .Then(echo, '<c>').Is('<d>')    \
+            .Examples(('a', 'b','c','d'), \
+                 [(1,2,True,True),          \
+                  (2,3,True,False)])        \
          .Test()
 
         Executing 'With Examples' with values {'a': 1, 'b': 2, 'c': True, 'd': True}
