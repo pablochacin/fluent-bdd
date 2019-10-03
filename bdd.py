@@ -1,6 +1,15 @@
 class Feature:
+    """
+       A class that represents a BDD Feature.
+
+       A Feature has one or more Scenarios. Each scenario is independent.
+       The Scenarios may share a Background, which defines a set of Conditions.
+    """
 
     class Background:
+        """
+        Defines a set of Conditions shared by the Scenarios in a Feature
+        """
         
         def __init__(self):
             self.conditions = []
@@ -37,16 +46,36 @@ class Feature:
                 print("Exception running scenario '{}': {}".format(s.title, ex))
  
 class Assertion:
+    """
+    Defines the assertions that can be evaluated in a Condition
+    """ 
 
     @staticmethod
     def Is(expected, actual):
+        """
+        Checks if the expected and actual values are equal.
+        """
         return expected == actual
 
     @staticmethod
     def IsNot(expected, actual):
+        """
+        Checks if the expected and actual values are not equal
+        """
         return expected != actual
 
 class Scenario:
+    """
+    Defines a BDD scenario. 
+   
+    A Scenario contains a list of Conditions, followed by a list of
+    Events and a list of Assertions. Conditions, Events and Clauses must
+    be introduced in order.
+
+    Conditions, Events, and Clauses may reference parameters which take their
+    values from a list of Examples. In that case, the Scenario is evaluated for
+    each set of values from the Examples.
+    """
 
     def __init__(self, feature, title):
         self.feature = feature
@@ -117,6 +146,9 @@ class Scenario:
         return values_map
 
     def run(self):
+        """
+        Executes Conditions, Events, and Clauses in the Scenario for each set of Example values. 
+        """
 
         runs = len(self.examples)
         if len(self.conditions) == 0:
@@ -159,7 +191,10 @@ class Scenario:
                 print("    Failed: {}".format(ex))
 
     class Closure:
-        
+        """
+        Contains a (possibly empty) set of values which are bound to the named arguments in a Function.
+        Named arguments are strings with the format '<name>'.
+        """
         def __init__(self, values_map):
             self.values_map = values_map
 
@@ -194,7 +229,14 @@ class Scenario:
             
             return args_values, kwargs_values
     
-    class Function: 
+
+    class Function:
+        """
+        Represents a Callable and its arguments, enclosed in a Closure.
+
+        When the Function is executed, its named arguments are bound to the values
+        in its Closure.
+        """
 
         def __init__(self, func, args, kwargs):
             self.func = func
@@ -223,6 +265,9 @@ class Scenario:
 
 
     class Condition(Function):
+        """
+        A Function that defines a condition that is satisfied by a Scenario.
+        """
      
         @staticmethod
         def type():
@@ -234,8 +279,12 @@ class Scenario:
         def execute(self):
             super().execute()
 
+
     class Event(Function):
-     
+        """
+        A Function that defines an Event that occurs in a Scenario
+        """
+
         @staticmethod
         def type():
             return "Event"
@@ -245,6 +294,10 @@ class Scenario:
 
         
     class Clause(Function):
+        """
+        A Function that defines an Assertion that must be satisfied in the Scenario after
+        the Events had occurred. 
+        """
 
         @staticmethod
         def type():
