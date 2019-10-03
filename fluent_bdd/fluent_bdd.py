@@ -1,4 +1,4 @@
-import bdd
+import fluent_bdd.bdd as bdd
 
 class BackgroundBuilder:
 
