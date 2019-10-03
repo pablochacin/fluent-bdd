@@ -116,8 +116,7 @@ class FeatureBuilder:
         return BackgroundBuilder(self,b)
 
     def Scenario(self, title):
-        s = bdd.Scenario(self.feature, title)
-        self.feature.addScenario(s)
+        s = self.feature.addScenario(title)
         return ScenarioBuilder(self, s)
 
     def Test(self):

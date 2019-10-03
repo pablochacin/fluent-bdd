@@ -34,8 +34,13 @@ class Feature:
 
         self.background = b
 
-    def addScenario(self, s):
+    def addScenario(self, title):
+        s = Scenario(title)
+        if self.background:
+           for func, args, kwargs in self.background.getConditions():
+               s.addCondition(func, *args, **kwargs)
         self.scenarios.append(s)
+        return s
 
     def test(self):
         print("Testing feature {}".format(self.name))
@@ -77,18 +82,13 @@ class Scenario:
     each set of values from the Examples.
     """
 
-    def __init__(self, feature, title):
-        self.feature = feature
+    def __init__(self, title):
         self.title = title
         self.conditions = []
         self.events = []
         self.clauses = []
         self.args_map = {}
         self.examples = [()]
-
-        if feature.background:
-            for f, a, kw in feature.background.conditions:
-                self.addCondition(f, *a, **kw)
 
     def addCondition(self, condition, *args, **kwargs):
         if not condition.__call__:
